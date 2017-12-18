@@ -6,8 +6,8 @@
 # User-specific stuff:
 .idea/**/workspace.xml
 .idea/**/tasks.xml
-.idea/**/vcs.xml
 .idea/dictionaries
+.idea/vcs.xml
 
 # Sensitive or high-churn files:
 .idea/**/dataSources/
@@ -172,3 +172,7 @@ venv.bak/
 Будет удалено items/
 Будет удалено manage.py
 Будет удалено pdm/
+Будет удалено .idea/inspectionProfiles/
+Будет удалено .idea/misc.xml
+Будет удалено .idea/modules.xml
+Будет удалено .idea/pdm.iml
