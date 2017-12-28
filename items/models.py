@@ -10,7 +10,7 @@ from mptt.models import MPTTModel, TreeForeignKey
 
 
 class MeasureUnit(models.Model):
-    """This model represent list of possible measure units"""
+    """ This model represent list of possible measure units """
     name = models.CharField(verbose_name=_('Unit name'), max_length=50, null=False, blank=False, unique=True)
     created = models.DateTimeField(auto_now_add=True, verbose_name=_('Created date'), editable=False, blank=True)
     modified = models.DateTimeField(auto_now=True, verbose_name=_('Modified date'), editable=False, blank=True)
@@ -25,7 +25,7 @@ class MeasureUnit(models.Model):
 
 
 class MaterialAsset(models.Model):
-    """This model represent assets at the warehouse. Any asset must have unique Part Number"""
+    """ This model represent assets at the warehouse. Any asset must have unique Part Number """
     part_number = models.CharField(verbose_name=_('Part Number'), max_length=150, null=False,
                                    blank=False, unique=True)
     name = models.CharField(verbose_name=_('Name'), max_length=250, null=False, blank=False)
@@ -45,7 +45,7 @@ class MaterialAsset(models.Model):
 
 
 class AmountConstraints(models.Model):
-    """This model set minimum and max amount for assets for violations and notify"""
+    """ This model set minimum and max amount for assets for violations and notify """
     material_asset = models.ForeignKey(MaterialAsset, verbose_name=_('Material Asset'), on_delete=models.PROTECT,
                                        related_name='Constraints', unique=True)
     # -1 - mean no minimal limitation
@@ -95,7 +95,7 @@ class AmountConstraints(models.Model):
 
 
 class DocumentType(models.Model):
-    """ This model represent document types, and set an amount direction"""
+    """ This model represent document types, and set an amount direction """
     TYPES = (
         (-1, _('Out')),
         (1, _('In')),
@@ -118,7 +118,7 @@ class DocumentType(models.Model):
 class Warehouse(MPTTModel):
     """ This model represent several Warehouses.
         This can be a physical warehouse or virtual (transporting for example)
-        Warehouse is MPTT model and could be have tree type structure"""
+        Warehouse is MPTT model and could be have tree type structure """
     name = models.CharField(verbose_name=_('Warehouse name'), max_length=50, blank=False, null=False, unique=True)
     parent = TreeForeignKey('self', null=True, blank=True, verbose_name=_('Parent'), related_name='children',
                             db_index=True, on_delete=models.PROTECT)
@@ -137,7 +137,7 @@ class Warehouse(MPTTModel):
 
 
 class ContractorGroup(MPTTModel):
-    """ This model represent tree type structure of contractors"""
+    """ This model represent tree type structure of contractors """
     name = models.CharField(verbose_name=_('Group name'), max_length=50, blank=False, null=False, unique=True)
     parent = TreeForeignKey('self', null=True, blank=True, verbose_name=_('Parent'), related_name='children',
                             db_index=True, on_delete=models.PROTECT)
@@ -173,14 +173,14 @@ class Contractor(models.Model):
 
 
 class Document(models.Model):
-    """ This model represent operations with amounts"""
+    """ This model represent input and output operations with amounts """
     document_type = models.ForeignKey(DocumentType, blank=False, null=False, verbose_name=_('Document type'),
                                       related_name='document', on_delete=models.PROTECT)
     warehouse = models.ForeignKey(Warehouse, blank=False, null=False, verbose_name=_('Warehouse'),
                                   related_name='document', on_delete=models.PROTECT)
     contractor = models.ForeignKey(Contractor, blank=False, null=False, verbose_name=_('Contractor'),
                                    related_name='document',  on_delete=models.PROTECT)
-    description = models.TextField(verbose_name=_('Document name'), blank=True, null=True)
+    description = models.TextField(verbose_name=_('Document description'), blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True, verbose_name=_('Created date'), editable=False, blank=True)
     modified = models.DateTimeField(auto_now=True, verbose_name=_('Modified date'), editable=False, blank=True)
 
@@ -192,6 +192,21 @@ class Document(models.Model):
     def __str__(self):
         return '{} {} {}'.format(self.document_type.name, self.contractor.name, self.modified)
 
-    # TODO Подумать о операции перемещения товара между сладами.
-    # TODO Создать другую модель с указанием складов (как считать общее количество товара?)
-    # TODO exam next way. Creating two documents for moving assets in one transaction.atomic block
+
+class MovingDocument(models.Model):
+    """ This model represent moving amount from one warehouse to another """
+    document_from = models.ForeignKey(Document, blank=False, null=False, verbose_name=_('From'),
+                                      related_name='moving_document', on_delete=models.PROTECT)
+    document_to = models.ForeignKey(Document, blank=False, null=False, verbose_name=_('From'),
+                                    related_name='moving_document', on_delete=models.PROTECT)
+    description = models.TextField(verbose_name=_('Description'), blank=True, null=True)
+    created = models.DateTimeField(auto_now_add=True, verbose_name=_('Created date'), editable=False, blank=True)
+    modified = models.DateTimeField(auto_now=True, verbose_name=_('Modified date'), editable=False, blank=True)
+
+    class Meta:
+        verbose_name = _('Document')
+        verbose_name_plural = _('Documents')
+        ordering = 'modified', 'created'
+
+    def __str__(self):
+        return '{} {} {}'.format(self.document_from.warehouse.name, self.document_to.warehouse.name, self.modified)
